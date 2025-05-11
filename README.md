@@ -29,12 +29,12 @@ Our system enables hands-on robotics experimentation without the financial barri
 ---
 
 ## 📂 Project Structure
-'''
+```
 code/
 ├── 1_calibration/ # Camera calibration scripts
 ├── 2_server/ # Real-time TCP position server
 ├── 3_generate_results/ # Data analysis and result visualization
-'''
+```
 ---
 
 ## 🚀 How to Use
