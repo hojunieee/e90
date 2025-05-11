@@ -3,16 +3,16 @@ import numpy as np
 import os
 import glob
 
-# === Config ===
+# === Configuration ===
 
-camera_id = 0 # 4->Top 0->front 2->back
+camera_id = 0  # Choose the camera (4->Top, 0->Front, 2->Back)
 cap = cv2.VideoCapture(camera_id)
 
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1080)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-chessboard_size = (4, 3)        # internal corners (columns, rows)
-square_size = 0.108             # meters
+chessboard_size = (4, 3)  # Chessboard size (columns, rows)
+square_size = 0.108  # Size of each square on the chessboard in meters
 
 saved_img_folder = "../E90/data/calibration/"
 os.makedirs(saved_img_folder, exist_ok=True)
@@ -31,13 +31,13 @@ calibration_file = os.path.join(saved_img_folder, f"mono_{img_prefix}.npz")
 if not cap.isOpened():
     raise IOError(f"Cannot open camera {camera_id}")
 
-print("📸 Press 's' to save an image. Press 'q' to quit.")
+print("Press 's' to save an image, or 'q' to quit.")
 
 img_counter = len(glob.glob(os.path.join(img_save_folder, "cam0_*.jpg")))
 while True:
     ret, frame = cap.read()
     if not ret:
-        print("❌ Failed to grab frame")
+        print("Failed to grab frame")
         break
     cv2.imshow("Live Feed", frame)
     key = cv2.waitKey(1) & 0xFF
@@ -45,7 +45,7 @@ while True:
     if key == ord('s'):
         save_path = os.path.join(img_save_folder, img_format.format(img_counter))
         cv2.imwrite(save_path, frame)
-        print(f"✅ Saved {save_path}")
+        print(f"Saved {save_path}")
         img_counter += 1
     elif key == ord('q'):
         break
@@ -53,7 +53,7 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 
-# === Step 2: Calibration ===
+# === Step 2: Camera Calibration ===
 image_paths = sorted(glob.glob(os.path.join(img_save_folder, f"{img_prefix}_*.jpg")))
 
 # Prepare 3D object points
@@ -78,16 +78,16 @@ for path in image_paths:
         imgpoints.append(corners_subpix)
         vis = cv2.drawChessboardCorners(img.copy(), chessboard_size, corners_subpix, ret)
         cv2.imshow("Detected Corners", vis)
-        print("🧐 Press any key to continue, or 'q' to quit preview.")
+        print("Press any key to continue or 'q' to quit preview.")
         key = cv2.waitKey(0) & 0xFF
         if key == ord('q'):
             break
     else:
-        print(f"❌ Chessboard not found in {path}")
+        print(f"Chessboard not found in {path}")
 
 cv2.destroyAllWindows()
 
-# Calibrate
+# Perform calibration
 ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(
     objpoints, imgpoints, gray.shape[::-1], None, None
 )
@@ -105,12 +105,12 @@ def compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs):
 
 error = compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs)
 
-# Output
-print("✅ Calibration complete")
+# Output calibration results
+print("Calibration complete")
 print("K (intrinsics):\n", K)
 print("Distortion coefficients:\n", dist)
 print(f"Reprojection error: {error:.4f} pixels")
 
-# Save results
+# Save the results
 np.savez(calibration_file, K=K, dist=dist, rvecs=rvecs, tvecs=tvecs)
-print(f"💾 Calibration save for camera {camera_id}")
+print(f"Calibration results saved for camera {camera_id}")
