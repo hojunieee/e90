@@ -5,7 +5,7 @@ import apriltag
 
 img_width = 1280
 img_height = 720
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, img_width)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, img_height)
 
