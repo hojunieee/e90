@@ -81,6 +81,7 @@ def detect_tags(frame, camera_matrix, dist_coeffs):
 # ==================== Main Loop ==================== #
 fps_list = []
 frame_idx = 0
+prev_positions = {}  # tag_id 
 try:
     while True:
         start_time = time.time()
@@ -111,8 +112,26 @@ try:
             x_0 = R_0 @ det0_dict[tag_id].reshape(3, 1) + T_0
             x_1 = det1_dict[tag_id].reshape(3, 1)
             x_2 = R_2 @ det2_dict[tag_id].reshape(3, 1) + T_2
-
-            avg_pos = (x_0 + x_1 + x_2) / 3
+        
+            # Store positions
+            positions = [x_0.flatten(), x_1.flatten(), x_2.flatten()]
+        
+            # Outlier rejection: reject any detection that jumps >0.1m from previous detection
+            valid_positions = []
+            for pos in positions:
+                if tag_id in prev_positions:
+                    prev_pos = prev_positions[tag_id]
+                    if np.linalg.norm(pos - prev_pos) < 0.1:
+                        valid_positions.append(pos)
+                else:
+                    valid_positions.append(pos)  # no history yet
+        
+            if len(valid_positions) == 0:
+                continue  # skip if all rejected
+        
+            avg_pos = np.mean(valid_positions, axis=0)
+            prev_positions[tag_id] = avg_pos  # update history
+        
             time_stamp = time.time()
             tag_info = {
                 "tagID": int(tag_id),
@@ -120,7 +139,7 @@ try:
                 "timestamp": time_stamp,
             }
             message = json.dumps(tag_info) + "\n"
-
+        
             if client:
                 try:
                     client.sendall(message.encode('utf-8'))
